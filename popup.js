@@ -93,6 +93,10 @@
     activityAdd: $("activity-add"),
     activityReset: $("activity-reset"),
     activityError: $("activity-error"),
+    activityImagePaste: $("activity-image-paste"),
+    activityImagePreview: $("activity-image-preview"),
+    activityImageThumbnail: $("activity-image-thumbnail"),
+    activityImageClear: $("activity-image-clear"),
     activityFilter: $("activity-filter"),
     activityHistory: $("activity-history"),
     activityEmpty: $("activity-empty"),
@@ -117,6 +121,9 @@
   let telegramSettings = { botToken: "", chatId: "", autoSendEnabled: false };
   let telegramStatuses = {};
   let telegramSettingsLoaded = false;
+  let activityImageBlob = null;
+  let activityImageMimeType = "";
+  let activityImageUrl = null;
   let activityEntriesLoaded = false;
   let lastDistributionResult = null;
 
@@ -183,7 +190,9 @@
         telegramSettings = {
           botToken: typeof saved.botToken === "string" ? saved.botToken : "",
           chatId: typeof saved.chatId === "string" ? saved.chatId : "",
-          autoSendEnabled: saved.autoSendEnabled === true,
+          autoSendEnabled: saved.autoSendEnabled === true
+            && typeof saved.botToken === "string" && saved.botToken.trim() !== ""
+            && typeof saved.chatId === "string" && saved.chatId.trim() !== "",
         };
         els.telegramBotToken.value = telegramSettings.botToken;
         els.telegramChatId.value = telegramSettings.chatId;
@@ -241,27 +250,39 @@
       });
     }
 
-  function sendActivityEntryToTelegram(entry) {
+  function sendActivityEntryToTelegram(entry, imageBlob, imageError) {
       if (!PLULogic.shouldAutoSend(telegramSettings)) return;
-      sendLogEntryToTelegram(entry, displayActivityTime(entry.timestampIso), telegramSettings).then(function (result) {
-        if (result.ok) {
-          chrome.storage.local.get("pendingTelegramSends", function (items) {
-            const queue = PLULogic.removeFromPendingQueue(items.pendingTelegramSends, entry.id);
-            savePendingTelegramQueue(queue, function () {
-              updateTelegramPendingWarning(queue);
-              setTelegramStatus(entry.id, "Terkirim ke Telegram");
+      sendTextToTelegram(PLULogic.formatLogEntryAsText(entry, displayActivityTime(entry.timestampIso)), telegramSettings).then(function (textResult) {
+        const sendPhoto = entry.gambar && imageBlob && entry._imageSaved
+          ? sendPhotoToTelegram(imageBlob, "Screenshot - " + entry.kodeArtikel, telegramSettings)
+          : Promise.resolve({ ok: true, skipped: true });
+        return sendPhoto.then(function (photoResult) {
+          if (textResult.ok && imageError) {
+            setTelegramStatus(entry.id, "Teks terkirim, gambar gagal: " + imageError);
+          } else if (textResult.ok && (photoResult.ok || photoResult.skipped)) {
+            setTelegramStatus(entry.id, "Teks terkirim" + (photoResult.skipped ? "" : ", gambar terkirim"));
+          } else if (textResult.ok) {
+            setTelegramStatus(entry.id, "Teks terkirim, gambar gagal: " + photoResult.error);
+          } else {
+            setTelegramStatus(entry.id, "Gagal kirim ke Telegram: " + textResult.error);
+          }
+          if (textResult.ok) {
+            return PLULogStore.loadPendingTelegram(function (queue) {
+              PLULogStore.savePendingTelegram(PLULogic.removeFromPendingQueue(queue, entry.id), updateTelegramPendingWarning);
             });
+          }
+          return PLULogStore.loadPendingTelegram(function (queue) {
+            PLULogStore.savePendingTelegram(PLULogic.addToPendingQueue(queue, entry.id), updateTelegramPendingWarning);
           });
-        } else {
-          queueTelegramFailure(entry, result.error);
-        }
+        });
+      }).catch(function (error) {
+        queueTelegramFailure(entry, error.message || "Pengiriman Telegram gagal.");
       });
     }
 
   function retryPendingTelegramSends() {
       if (!telegramSettingsLoaded || !PLULogic.shouldAutoSend(telegramSettings)) return;
-      chrome.storage.local.get("pendingTelegramSends", function (items) {
-        const queue = Array.isArray(items.pendingTelegramSends) ? items.pendingTelegramSends.slice() : [];
+      PLULogStore.loadPendingTelegram(function (queue) {
         const found = [];
         queue.forEach(function (entryId) {
           const entry = activityEntries.find(function (candidate) { return candidate.id === entryId; });
@@ -272,7 +293,7 @@
           found.push(entryId);
           sendActivityEntryToTelegram(entry);
         });
-        if (found.length !== queue.length) savePendingTelegramQueue(found, updateTelegramPendingWarning);
+        if (found.length !== queue.length) PLULogStore.savePendingTelegram(found, updateTelegramPendingWarning);
         else updateTelegramPendingWarning(queue);
       });
     }
@@ -878,7 +899,7 @@
     loadButton.textContent = "Muat Data Log";
     loadButton.addEventListener("click", function () {
       PLULogFile.verifyOrRequestPermission(handle).then(function () {
-        els.activityFileStatus.textContent = "File log: terhubung";
+        els.activityFileStatus.textContent = "Folder log: terhubung";
         setActivityPermissionNotice(null);
         setActivityError("");
         return reloadActivityFromFile(handle);
@@ -1058,9 +1079,7 @@
     });
     renderActivityPagination(view, filtered.length);
     updateActivityWarning();
-    chrome.storage.local.get("pendingTelegramSends", function (items) {
-      updateTelegramPendingWarning(Array.isArray(items.pendingTelegramSends) ? items.pendingTelegramSends : []);
-    });
+    PLULogStore.loadPendingTelegram(updateTelegramPendingWarning);
   }
 
   /** Page bar state. Hidden entirely when there is nothing to page through;
@@ -1106,13 +1125,19 @@
     renderActivityHistory();
     PLULogStore.loadPending(function (pending) {
       pendingActivityEntries = pending;
-      PLULogFile.getStoredFileHandle().then(function (handle) {
+      PLULogFile.getStoredDirectoryHandle().then(function (handle) {
         if (!handle) {
+          PLULogFile.hasLegacyFileHandle().then(function (legacy) {
+            if (legacy) {
+              setActivityError("Lokasi penyimpanan log berubah ke folder — silakan pilih folder log baru");
+            } else {
+              setActivityError("");
+            }
+          });
           setActivityPermissionNotice(null);
           activityEntries = PLULogic.mergeLogEntries([], pendingActivityEntries);
           activityEntriesLoaded = true;
-          els.activityFileStatus.textContent = "File log: belum dipilih";
-          setActivityError("");
+          els.activityFileStatus.textContent = "Folder log: belum dipilih";
           renderActivityHistory();
           retryPendingTelegramSends();
           return;
@@ -1120,12 +1145,12 @@
         return handle.queryPermission({ mode: "readwrite" }).then(function (permission) {
           if (permission === "granted") {
             setActivityPermissionNotice(null);
-            els.activityFileStatus.textContent = "File log: terhubung";
+            els.activityFileStatus.textContent = "Folder log: terhubung";
             setActivityError("");
             return reloadActivityFromFile(handle);
           }
           if (permission === "prompt") {
-            els.activityFileStatus.textContent = "File log: izin diperlukan";
+            els.activityFileStatus.textContent = "Folder log: izin diperlukan";
             setActivityError("");
             setActivityPermissionNotice(handle);
             activityEntries = PLULogic.mergeLogEntries([], pendingActivityEntries);
@@ -1135,7 +1160,7 @@
             return;
           }
           setActivityPermissionNotice(null);
-          els.activityFileStatus.textContent = "File log: belum dipilih";
+          els.activityFileStatus.textContent = "Folder log: belum dipilih";
           setActivityError("");
           activityEntries = PLULogic.mergeLogEntries([], pendingActivityEntries);
           activityEntriesLoaded = true;
@@ -1146,7 +1171,7 @@
         setActivityPermissionNotice(null);
         activityEntries = PLULogic.mergeLogEntries([], pendingActivityEntries);
         activityEntriesLoaded = true;
-        els.activityFileStatus.textContent = "File log: izin diperlukan";
+        els.activityFileStatus.textContent = "Folder log: izin diperlukan";
         setActivityError("Tidak dapat membaca file log: " + error.message);
         renderActivityHistory();
       });
@@ -1166,13 +1191,32 @@
     els.activityOld.value = "";
     els.activityNew.value = "";
     els.activityNote.value = "";
+    clearActivityImage();
     updateActivitySubAction();
     clearActivityDraft();
   }
 
+  function clearActivityImage() {
+    activityImageBlob = null;
+    activityImageMimeType = "";
+    if (activityImageUrl) URL.revokeObjectURL(activityImageUrl);
+    activityImageUrl = null;
+    els.activityImageThumbnail.removeAttribute("src");
+    els.activityImagePreview.hidden = true;
+  }
+
+  function setActivityImage(blob) {
+    clearActivityImage();
+    activityImageBlob = blob;
+    activityImageMimeType = blob.type || "image/png";
+    activityImageUrl = URL.createObjectURL(blob);
+    els.activityImageThumbnail.src = activityImageUrl;
+    els.activityImagePreview.hidden = false;
+  }
+
   function flushPendingActivity(onSuccess) {
     if (!pendingActivityEntries.length) return;
-    PLULogFile.getStoredFileHandle().then(function (handle) {
+    PLULogFile.getStoredDirectoryHandle().then(function (handle) {
       if (!handle) throw new Error("Pilih file log terlebih dahulu.");
       return PLULogFile.verifyOrRequestPermission(handle).then(function () {
         return PLULogFile.readLogFile(handle).then(function (fileEntries) {
@@ -1181,7 +1225,7 @@
             return PLULogStore.clearPending(function () {
               pendingActivityEntries = [];
               activityEntries = merged;
-              els.activityFileStatus.textContent = "File log: terhubung";
+              els.activityFileStatus.textContent = "Folder log: terhubung";
               setActivityError("");
               renderActivityHistory();
               if (onSuccess) onSuccess();
@@ -1196,13 +1240,13 @@
   }
 
   function onActivityPickFile() {
-    PLULogFile.pickLogFile().then(function (handle) {
+    PLULogFile.pickLogDirectory().then(function (handle) {
       return PLULogFile.verifyOrRequestPermission(handle).then(function () {
         return PLULogFile.readLogFile(handle).then(function (fileEntries) {
           // Show the selected file's existing contents before any pending
           // safeguard entries are flushed back to it.
           activityEntries = PLULogic.mergeLogEntries(fileEntries, []);
-          els.activityFileStatus.textContent = "File log: terhubung";
+          els.activityFileStatus.textContent = "Folder log: terhubung";
           setActivityPermissionNotice(null);
           setActivityError("");
           renderActivityHistory();
@@ -1245,6 +1289,7 @@
         catatan: els.activityNote.value,
         nilaiLama: els.activityOld.value,
         nilaiBaru: els.activityNew.value,
+        gambar: activityImageBlob ? { mimeType: activityImageMimeType } : null,
       }, new Date().toISOString());
     } catch (error) {
       setActivityError(error.message);
@@ -1254,40 +1299,51 @@
     // A new entry belongs at the top of a newest-first list, so jump back to
     // page 1 rather than leaving the user on a page that shifted underneath.
     activityPage = 1;
-    const sendAfterSave = function () {
-      sendActivityEntryToTelegram(entry);
-    };
-    const save = pendingActivityEntries.length ? (PLULogStore.enqueuePending(entry, function () {
-      PLULogStore.loadPending(function (pending) {
-        pendingActivityEntries = pending;
-        activityEntries = PLULogic.mergeLogEntries(activityEntries, [entry]);
-        renderActivityHistory();
-        flushPendingActivity(function () {
-          clearActivityForm();
-          sendAfterSave();
-        });
-      });
-    })) : PLULogFile.appendEntryToFile(entry).then(function (result) {
-      if (!result.ok) throw new Error(result.reason === "no-file" ? "Pilih file log terlebih dahulu." : "File log tidak dapat ditulis.");
-      return PLULogFile.getStoredFileHandle().then(reloadActivityFromFile);
-    });
-    if (save && typeof save.catch === "function") {
-      save.catch(function (error) {
+    const imageBlob = activityImageBlob;
+    const save = (pendingActivityEntries.length
+      ? new Promise(function (resolve) {
         PLULogStore.enqueuePending(entry, function () {
           PLULogStore.loadPending(function (pending) {
             pendingActivityEntries = pending;
             activityEntries = PLULogic.mergeLogEntries(activityEntries, [entry]);
             renderActivityHistory();
-            setActivityError("Log belum tersimpan ke file: " + error.message);
+            resolve({ queued: true });
           });
         });
-      });
-    }
-    if (pendingActivityEntries.length) return;
-    save.then(function () {
+      })
+      : PLULogFile.appendEntryToFile(entry).then(function (result) {
+        if (!result.ok) throw new Error(result.reason === "no-directory" ? "Pilih folder log terlebih dahulu." : "Folder log tidak dapat ditulis.");
+        return PLULogFile.getStoredDirectoryHandle().then(function (handle) {
+          return reloadActivityFromFile(handle).then(function () { return { directoryHandle: handle }; });
+        });
+      }).catch(function (error) {
+        return new Promise(function (resolve) {
+          PLULogStore.enqueuePending(entry, function () {
+            PLULogStore.loadPending(function (pending) {
+              pendingActivityEntries = pending;
+              activityEntries = PLULogic.mergeLogEntries(activityEntries, [entry]);
+              renderActivityHistory();
+              setActivityError("Log belum tersimpan ke folder: " + error.message);
+              resolve({ queued: true });
+            });
+          });
+        });
+      }));
+    save.then(function (result) {
       clearActivityForm();
-      sendAfterSave();
-    }).catch(function () {});
+      if (result.queued) return;
+      if (result.directoryHandle && imageBlob && entry.gambar) {
+        PLULogFile.saveEntryImage(result.directoryHandle, entry.gambar.fileName, imageBlob).then(function () {
+          entry._imageSaved = true;
+          sendActivityEntryToTelegram(entry, imageBlob);
+        }).catch(function (error) {
+          setActivityError("Log tersimpan, tapi gambar gagal disimpan: " + (error.message || error));
+          sendActivityEntryToTelegram(entry, imageBlob, error.message || String(error));
+        });
+      } else {
+        sendActivityEntryToTelegram(entry, imageBlob);
+      }
+    });
   }
 
   // ---- copy buttons --------------------------------------------------
@@ -1403,6 +1459,18 @@
     input.addEventListener("change", saveActivityDraft);
   });
   els.activityAdd.addEventListener("click", onActivityAdd);
+  els.activityImagePaste.addEventListener("paste", function (event) {
+    const items = event.clipboardData && event.clipboardData.items;
+    if (!items) return;
+    for (let i = 0; i < items.length; i++) {
+      if (items[i].type.indexOf("image/") === 0) {
+        event.preventDefault();
+        setActivityImage(items[i].getAsFile());
+        return;
+      }
+    }
+  });
+  els.activityImageClear.addEventListener("click", clearActivityImage);
   els.telegramSave.addEventListener("click", saveTelegramSettings);
   els.telegramAutoSend.addEventListener("change", function () {
     const tokenMatches = els.telegramBotToken.value.trim() === telegramSettings.botToken;
@@ -1419,21 +1487,9 @@
     });
   });
   els.activityReset.addEventListener("click", function () {
-    els.activityKode.value = "";
-    Array.prototype.forEach.call(els.activityActions, function (input) { input.checked = false; });
-    els.activitySub.value = "";
-    els.activitySubWrap.hidden = true;
-    els.activitySub.required = false;
-    els.activityHppOld.value = "";
-    els.activityHppNew.value = "";
-    els.activityHjOld.value = "";
-    els.activityHjNew.value = "";
-    els.activityOld.value = "";
-    els.activityNew.value = "";
-    els.activityNote.value = "";
+    clearActivityForm();
     setActivityError("");
     updateActivitySubAction();
-    clearActivityDraft();
   });
   els.activityPickFile.addEventListener("click", onActivityPickFile);
   els.activityFilter.addEventListener("input", function () {

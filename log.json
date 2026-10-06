@@ -1,5 +1,27 @@
 [
   {
+    "id": "2026-10-06T02:45:56.762Z-tx1tuulj",
+    "timestampIso": "2026-10-06T02:45:56.762Z",
+    "kodeArtikel": "LIN001580C",
+    "jenisAksi": [
+      "Create PLU"
+    ],
+    "subAksi": null,
+    "catatan": "",
+    "nilaiPerubahan": {
+      "hpp": null,
+      "hj": null,
+      "umum": {
+        "lama": "",
+        "baru": ""
+      }
+    },
+    "gambar": {
+      "fileName": "2026-10-06T02_45_56.762Z-tx1tuulj.png",
+      "mimeType": "image/png"
+    }
+  },
+  {
     "id": "2026-10-06T02:06:03.491Z-x8pyew0d",
     "timestampIso": "2026-10-06T02:06:03.491Z",
     "kodeArtikel": "LIN000897M",

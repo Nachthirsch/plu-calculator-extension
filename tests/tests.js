@@ -468,6 +468,18 @@
     const old = PLULogic.formatLogEntryAsText({ kodeArtikel: "OLD", jenisAksi: ["Rubah HPP"], subAksi: null, catatan: "", nilaiLama: "old", nilaiBaru: "new" }, "now");
     check(old.indexOf("Perubahan Nilai:\n- Nilai: old -> new") !== -1, "old flat entry compatibility");
   });
+  add("Activity log image metadata uses MIME extensions", "PNG metadata is deterministic and absent images stay null", function () {
+    const withImage = PLULogic.buildLogEntry({ kodeArtikel: "IMG", jenisAksi: ["Create PLU"], gambar: { mimeType: "image/png" } }, "fixed-id");
+    check(withImage.gambar.mimeType === "image/png", "image MIME metadata");
+    check(withImage.gambar.fileName === PLULogic.sanitizeForFileName(withImage.id) + ".png", "sanitized image metadata");
+    check(!withImage.gambar.fileName.includes(":"), "image filename contains no colon");
+    check(PLULogic.extensionForMimeType("image/jpeg") === "jpg" && PLULogic.extensionForMimeType("image/other") === "png", "MIME mapping");
+    check(PLULogic.sanitizeForFileName("2026-10-06T02:39:28.201Z-z5ss2byg") === "2026-10-06T02_39_28.201Z-z5ss2byg", "filename sanitization");
+    check(PLULogic.buildLogEntry({ kodeArtikel: "NOIMG", jenisAksi: ["Create PLU"] }, "fixed-id").gambar === null, "no image");
+    const output = PLULogic.formatLogEntryAsText(withImage, "now");
+    check(output.indexOf("Lampiran: " + withImage.gambar.fileName + " (lihat folder images/)") !== -1, "attachment section");
+    check(PLULogic.formatLogEntryAsText(Object.assign({}, withImage, { gambar: null })).indexOf("Lampiran:") === -1, "attachment omission");
+  });
   add("Activity log formatter uses the structured section template", "aligned metadata, action bullets, HPP value bullet, catatan, and separators", function () {
     const entry = {
       kodeArtikel: "ART-9",
@@ -479,9 +491,7 @@
     const expected = [
       "LOG AKTIVITAS ARTIKEL",
       "======================",
-      "",
       "Waktu         : 05 Okt 2026, 14:32",
-      "",
       "Kode Artikel  : ART-9",
       "",
       "Aksi:",
@@ -492,12 +502,70 @@
       "- HPP: 93.500 -> 94.000",
       "",
       "# Catatan:",
-      "",
       "Disetujui",
       "",
       "======================",
     ].join("\n");
     check(PLULogic.formatLogEntryAsText(entry, "05 Okt 2026, 14:32") === expected, "exact structured template");
+  });
+  add("Activity log formatter keeps metadata together and omits empty values", "exact metadata spacing and no empty value section", function () {
+    const output = PLULogic.formatLogEntryAsText({
+      kodeArtikel: "test",
+      jenisAksi: ["Create PLU"],
+      subAksi: null,
+      nilaiPerubahan: { umum: { lama: "", baru: "" } },
+      catatan: "",
+      gambar: null,
+    }, "6 Okt 2026, 09.33");
+    const expected = [
+      "LOG AKTIVITAS ARTIKEL",
+      "======================",
+      "Waktu         : 6 Okt 2026, 09.33",
+      "Kode Artikel  : test",
+      "",
+      "Aksi:",
+      "- Create PLU",
+      "",
+      "======================",
+    ].join("\n");
+    check(output === expected, "exact metadata-only output");
+    check(output.indexOf("Perubahan Nilai:") === -1, "empty pairing omitted");
+  });
+  add("Activity log formatter includes a one-sided value pairing", "one populated side produces a value bullet", function () {
+    const output = PLULogic.formatLogEntryAsText({
+      kodeArtikel: "test",
+      jenisAksi: ["Create PLU"],
+      subAksi: null,
+      nilaiPerubahan: { umum: { lama: "100", baru: "" } },
+      catatan: "",
+    }, "now");
+    const expected = [
+      "LOG AKTIVITAS ARTIKEL",
+      "======================",
+      "Waktu         : now",
+      "Kode Artikel  : test",
+      "",
+      "Aksi:",
+      "- Create PLU",
+      "",
+      "Perubahan Nilai:",
+      "- Nilai: 100 -> -",
+      "",
+      "======================",
+    ].join("\n");
+    check(output === expected, "exact one-sided value output");
+  });
+  add("Activity log formatter separates action section from bullets", "one blank line before Aksi and none between bullets", function () {
+    const output = PLULogic.formatLogEntryAsText({
+      kodeArtikel: "test",
+      jenisAksi: ["Create PLU", "Rubah HPP"],
+      subAksi: null,
+      nilaiPerubahan: null,
+      catatan: "",
+    }, "now");
+    check(output.indexOf("Kode Artikel  : test\n\nAksi:") !== -1, "one section boundary before actions");
+    check(output.indexOf("- Create PLU\n\n- Rubah HPP") === -1, "no blank line between action bullets");
+    check(output.indexOf("Aksi:\n- Create PLU\n- Rubah HPP") !== -1, "adjacent action bullets");
   });
   add("Activity log formatter omits empty optional sections", "no value or catatan headings when all optional content is empty", function () {
     const output = PLULogic.formatLogEntryAsText({
@@ -517,7 +585,7 @@
       catatan: "Baris satu\nBaris dua",
       nilaiPerubahan: { hpp: null, hj: null, umum: null },
     }, "now");
-    check(output.indexOf("# Catatan:\n\nBaris satu\nBaris dua") !== -1, "multiline catatan");
+    check(output.indexOf("# Catatan:\nBaris satu\nBaris dua") !== -1, "multiline catatan");
   });
   add("Activity log merges by id and sorts newest first", "duplicates are kept once and timestamps descend", function () {
     const old = { id: "old", timestampIso: "2026-01-01T00:00:00Z" };
@@ -684,6 +752,7 @@
     const withNew = PLULogic.addToPendingQueue(added, "b");
     check(withNew.join(",") === "a,b", "add");
     check(PLULogic.removeFromPendingQueue(withNew, "a").join(",") === "b", "remove");
+    check(PLULogic.addToPendingQueue(["1", "2", "3", "4", "5"], "6").join(",") === "2,3,4,5,6", "cap");
   });
 
   // ---- runner ----------------------------------------------------------
@@ -723,6 +792,7 @@
 
     summary.textContent = passed + " / " + tests.length + " tests passed" + (failures.length ? " — " + failures.length + " FAILED" : " — all passed");
     summary.className = "summary " + (failures.length ? "fail" : "pass");
+    if (!failures.length) console.log("ALL TESTS PASSED");
     // Log failures to the console too, for the Load-unpacked console view.
     for (const fail of failures) {
       console.error("Test " + fail.index + " FAILED: " + fail.name + " — " + fail.detail);

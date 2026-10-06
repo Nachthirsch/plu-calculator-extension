@@ -252,27 +252,39 @@ For Buat SP, the required sub-action is **SP Keseluruhan**, **SP (per LOT)**,
 or **SP (per Part)**. Each entry records its automatic timestamp, Kode Artikel,
 action, optional Catatan, Nilai Lama, and Nilai Baru.
 
-The selected local JSON file is the single source of truth. Choose it once with
-**Pilih File Log**. The File System Access API asks for a one-time read/write
-permission; after that, each new entry reads the current file, merges the
-entry, and writes the file back. The popup reads history from the file rather
-than maintaining a full `chrome.storage.local` cache.
+The selected local **folder** is the single source of truth. Choose it once
+with **Pilih Folder Log**. The folder contains `log.json` and an `images/`
+subfolder containing pasted screenshots as separate files. The File System
+Access API asks for a one-time read/write permission; after that, each new
+entry reads the current JSON, merges the entry, and writes it back. Existing
+users with the old single-file handle see a one-time notice that the storage
+location changed and must choose a new folder; the old file is never
+auto-converted.
 
 If a write fails, a small retry queue in `chrome.storage.local` holds at most
 five unsaved entries and displays a visible warning. **Coba Simpan Lagi** or
-choosing a file again flushes this queue into the file. This queue is only a
+choosing a folder again flushes this queue into `log.json`. This queue is only a
 data-loss safeguard, not a second log database.
 Use **Salin Teks** on any row to copy a proof-style text block and paste it
-manually elsewhere, such as Telegram.
+manually elsewhere, such as Telegram. To attach an image, focus the
+**Screenshot (opsional)** zone and press Ctrl+V. The thumbnail is held only in
+memory until **Tambah Log**; if the popup closes first, the pasted image is
+lost by design rather than being stored in `chrome.storage`. If image storage
+fails after the text entry is saved, the text remains saved and the warning
+identifies the separate image failure. A queued text entry does not queue its
+binary image.
 
 Telegram auto-send is optional and off by default. It requires your own Bot
 Token (create a bot with [@BotFather](https://t.me/BotFather)) and Chat ID. To
 find a Chat ID, send a message to the bot, then open
 `https://api.telegram.org/bot<TOKEN>/getUpdates` and read the `chat.id` value.
-After saving both values, enable **Kirim otomatis ke Telegram**. This is the
-only feature that needs internet access; all calculation panels and local log
-file operations remain offline. Failed Telegram sends are kept in a small
-pending queue and can be retried from the Log Aktivitas panel.
+After saving both values, enable **Kirim otomatis ke Telegram**. Each new
+entry sends formatted text with `sendMessage`, and an attached screenshot with
+`sendPhoto` as a separate call. Failed text sends are kept in a small pending
+queue and can be retried from the Log Aktivitas panel; failed photo sends are
+not retried because the Blob is intentionally not persisted. This is the only
+feature that needs internet access; all calculation panels and local log
+operations remain offline.
 
 ## Validation
 
@@ -302,10 +314,11 @@ so a restored result can never drift from the formulas.
 - HJ KW2 menyimpan hanya nilai HPP di bawah `kw2Inputs`; state lama berbentuk
   `{kurs, rmb}` diabaikan dengan aman dan tidak mengisi field atau error.
 - HPP FOB menyimpan raw input di bawah key terpisah `hppFobInputs`.
-- The activity log's JSON file is its source of truth. Only its small pending
-  retry queue (`pendingLogEntries`, capped at five entries) is kept in
-  `chrome.storage.local`; the selected file handle is kept in IndexedDB because
-  it cannot be stored in `chrome.storage.local`.
+- The activity log folder's `log.json` is its source of truth. Only the small
+  pending retry queues (`pendingLogEntries` and `pendingTelegramSends`, each
+  capped at five entries) are kept in `chrome.storage.local`; the selected
+  directory handle is kept in IndexedDB because it cannot be stored in
+  `chrome.storage.local`.
 - HJ KW2 tidak pernah membaca, mengubah, atau menimpa object `pluInputs_v1`.
 - `storage` is used for local settings and small retry queues. The only
   network permission is `https://api.telegram.org/*`, used exclusively by

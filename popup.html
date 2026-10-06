@@ -262,8 +262,8 @@
           </h1>
           <div class="panel-body" id="panel-body-activityLog">
           <div class="activity-file-bar">
-            <span id="activity-file-status">File log: belum dipilih</span>
-            <button id="activity-pick-file" type="button">Pilih File Log</button>
+            <span id="activity-file-status">Folder log: belum dipilih</span>
+            <button id="activity-pick-file" type="button">Pilih Folder Log</button>
           </div>
           <div id="activity-pending-warning" class="activity-warning" role="alert" hidden></div>
           <div class="activity-telegram">
@@ -294,6 +294,11 @@
               <div id="activity-generic-fields" class="activity-value-pair"><label class="field"><span>Nilai Lama</span><input id="activity-old" type="text" autocomplete="off" /></label><label class="field"><span>Nilai Baru</span><input id="activity-new" type="text" autocomplete="off" /></label></div>
             </div>
             <label class="field activity-note"><span>Catatan</span><textarea id="activity-note" rows="2"></textarea></label>
+            <div class="activity-image">
+              <span>Screenshot (opsional)</span>
+              <div id="activity-image-paste" class="activity-image-paste" tabindex="0">Klik di sini lalu Ctrl+V untuk tempel screenshot</div>
+              <div id="activity-image-preview" hidden><img id="activity-image-thumbnail" alt="Pratinjau screenshot" /><button id="activity-image-clear" type="button">Hapus Gambar</button></div>
+            </div>
           </div>
           <div class="buttons">
             <button id="activity-add" class="primary" type="button">Tambah Log</button>
