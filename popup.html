@@ -1,0 +1,333 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>PLU Calculator</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body class="loading">
+    <header class="topbar">
+      <nav id="tab-bar" class="tab-bar" aria-label="Panel calculator">
+        <label class="panel-toggle">
+          <span>Distribusi Qty</span>
+          <input id="visibility-distribution" type="checkbox" checked />
+        </label>
+        <label class="panel-toggle">
+          <span>Harga Jual</span>
+          <input id="visibility-selling-price" type="checkbox" checked />
+        </label>
+        <label class="panel-toggle">
+          <span>HJ KW2</span>
+          <input id="visibility-kw2" type="checkbox" checked />
+        </label>
+        <label class="panel-toggle">
+          <span>HPP FOB</span>
+          <input id="visibility-hpp-fob" type="checkbox" checked />
+        </label>
+        <label class="panel-toggle">
+          <span>Log Aktivitas</span>
+          <input id="visibility-activity-log" type="checkbox" checked />
+        </label>
+      </nav>
+    </header>
+
+    <main id="app-content" class="app-content">
+      <div id="normal-view" class="scroll">
+        <section id="distribution-panel" class="panel">
+          <h1 class="panel-head" id="panel-head-distribution" data-panel="distribution" role="button" tabindex="0" aria-expanded="true" aria-controls="panel-body-distribution">
+            Qty Distribution <span class="sub">(PLU)</span>
+            <span class="chev" aria-hidden="true"></span>
+          </h1>
+          <div class="panel-body" id="panel-body-distribution">
+
+          <div class="grid inputs">
+            <label class="field grow">
+              <span>Qty</span>
+              <input id="qty" type="text" inputmode="numeric" placeholder="5000" autocomplete="off" />
+            </label>
+            <label class="field">
+              <span>Colors</span>
+              <input id="colors" type="text" inputmode="numeric" placeholder="2" autocomplete="off" />
+            </label>
+            <div class="field grow">
+              <span>Mode</span>
+              <select id="mode">
+                <option value="auto">Auto Average</option>
+                <option value="manual">Manual per Color</option>
+              </select>
+            </div>
+          </div>
+
+          <fieldset class="ratios">
+            <legend>Ratio</legend>
+            <div class="grid ratio-grid" id="ratio-grid">
+              <label class="field"><span>S</span><input id="ratio-S" type="text" inputmode="decimal" placeholder="3" autocomplete="off" /></label>
+              <label class="field"><span>M</span><input id="ratio-M" type="text" inputmode="decimal" placeholder="3" autocomplete="off" /></label>
+              <label class="field"><span>L</span><input id="ratio-L" type="text" inputmode="decimal" placeholder="3" autocomplete="off" /></label>
+              <label class="field"><span>XL</span><input id="ratio-XL" type="text" inputmode="decimal" placeholder="3" autocomplete="off" /></label>
+              <label class="field"
+                ><span>Z <em>optional</em></span
+                ><input id="ratio-Z" type="text" inputmode="decimal" placeholder="" autocomplete="off"
+              /></label>
+            </div>
+          </fieldset>
+
+          <div id="qty-colors" class="qty-colors" hidden>
+            <div class="qty-colors-head">Qty per Color <span class="sub">(sum must equal Qty)</span></div>
+            <div class="grid qc-grid" id="qc-grid"></div>
+          </div>
+
+          <div class="buttons">
+            <button id="calculate" class="primary">Calculate</button>
+            <button id="reset">Reset</button>
+          </div>
+
+          <div id="plu-error" class="error" role="alert" hidden></div>
+
+          <div class="result-wrap" id="plu-result-wrap" hidden>
+            <div class="result-head">
+              <button id="plu-copy" type="button" class="copy-button">Copy Tabel</button>
+            </div>
+            <table class="result" id="plu-table">
+              <caption>
+                Distribusi Qty per Size
+              </caption>
+              <thead>
+                <tr id="plu-head"></tr>
+              </thead>
+              <tbody id="plu-body"></tbody>
+            </table>
+            <p id="plu-reconcile" class="reconcile-note" hidden></p>
+          </div>
+          </div>
+        </section>
+
+        <section id="selling-price-panel" class="panel">
+          <h1 class="panel-head" id="panel-head-sellingPrice" data-panel="sellingPrice" role="button" tabindex="0" aria-expanded="true" aria-controls="panel-body-sellingPrice">
+            Selling Price <span class="sub">(Harga Jual)</span>
+            <span class="chev" aria-hidden="true"></span>
+          </h1>
+          <div class="panel-body" id="panel-body-sellingPrice">
+          <div class="grid inputs">
+            <label class="field grow">
+              <span>Exchange Rate <span class="sub">RMB&rarr;IDR</span></span>
+              <input id="kurs" type="text" inputmode="decimal" placeholder="2700" autocomplete="off" />
+            </label>
+            <label class="field grow">
+              <span>RMB Amount <span class="sub">HPP</span></span>
+              <input id="rmb" type="text" inputmode="decimal" placeholder="98" autocomplete="off" />
+            </label>
+          </div>
+          <div class="buttons">
+            <button id="price-calc" class="primary">Calculate Price</button>
+            <button id="price-reset">Reset</button>
+          </div>
+          <div id="price-error" class="error" role="alert" hidden></div>
+          <div class="buttons result-actions" id="price-copy-wrap" hidden>
+            <button id="price-copy" type="button" class="copy-button">Copy Hasil</button>
+          </div>
+          <dl class="price-result" id="price-result" hidden>
+            <div>
+              <dt>HPP (Rp)</dt>
+              <dd id="out-hpp"></dd>
+            </div>
+            <div>
+              <dt>N1/HJ lower bound</dt>
+              <dd id="out-n1low"></dd>
+            </div>
+            <div>
+              <dt>N1/HJ upper bound</dt>
+              <dd id="out-n1high"></dd>
+            </div>
+            <div class="answer">
+              <dt>N1/HJ (Rp)</dt>
+              <dd id="out-n1"></dd>
+            </div>
+            <div>
+              <dt>N1 margin</dt>
+              <dd id="out-n1margin"></dd>
+            </div>
+            <div>
+              <dt>+ Add-on (Rp)</dt>
+              <dd id="out-addon"></dd>
+            </div>
+            <div class="answer big">
+              <dt>HJ F (Rp)</dt>
+              <dd id="out-hj"></dd>
+            </div>
+            <div>
+              <dt>HJ F margin</dt>
+              <dd id="out-hjmargin"></dd>
+            </div>
+          </dl>
+          </div>
+        </section>
+
+        <section id="kw2-panel" class="panel">
+          <h1 class="panel-head" id="panel-head-kw2" data-panel="kw2" role="button" tabindex="0" aria-expanded="true" aria-controls="panel-body-kw2">
+            HJ KW2
+            <span class="chev" aria-hidden="true"></span>
+          </h1>
+          <div class="panel-body" id="panel-body-kw2">
+          <div class="grid kw2-inputs">
+            <label class="field grow">
+              <span>HPP (Rp)</span>
+              <input id="kw2-hpp" type="text" inputmode="decimal" placeholder="264600" autocomplete="off" />
+            </label>
+          </div>
+          <div class="buttons kw2-buttons">
+            <button id="kw2-calculate" class="kw2-primary">Hitung KW2</button>
+            <button id="kw2-reset">Reset</button>
+          </div>
+          <div id="kw2-error" class="kw2-error" role="alert" hidden></div>
+          <div class="buttons result-actions" id="kw2-copy-wrap" hidden>
+            <button id="kw2-copy" type="button" class="copy-button">Copy Hasil</button>
+          </div>
+          <dl class="kw2-price-result" id="kw2-result" hidden>
+            <div>
+              <dt>HJ KW2 Raw (Rp)</dt>
+              <dd id="kw2-out-raw"></dd>
+            </div>
+            <div class="kw2-answer">
+              <dt>HJ KW2 (Rp)</dt>
+              <dd id="kw2-out-hj"></dd>
+            </div>
+            <div>
+              <dt>Margin HJ KW2</dt>
+              <dd id="kw2-out-margin"></dd>
+            </div>
+          </dl>
+          </div>
+        </section>
+        <section id="hpp-fob-panel" class="panel">
+          <h1 class="panel-head" id="panel-head-hppFob" data-panel="hppFob" role="button" tabindex="0" aria-expanded="true" aria-controls="panel-body-hppFob">
+            HPP FOB
+            <span class="chev" aria-hidden="true"></span>
+          </h1>
+          <div class="panel-body" id="panel-body-hppFob">
+          <div class="grid hpp-fob-inputs">
+            <label class="field">
+              <span>Qty Total</span>
+              <input id="fob-qty" type="text" inputmode="numeric" placeholder="50" autocomplete="off" />
+            </label>
+            <label class="field">
+              <span>Nilai Diskon (%)</span>
+              <input id="fob-discount" type="text" inputmode="decimal" placeholder="10" autocomplete="off" />
+            </label>
+            <label class="field">
+              <span>HPP Awal (Rp)</span>
+              <input id="fob-hpp" type="text" inputmode="decimal" placeholder="100000" autocomplete="off" />
+            </label>
+            <label class="field">
+              <span>Nilai Aksesoris (Rp)</span>
+              <input id="fob-accessories" type="text" inputmode="decimal" placeholder="1500.5" autocomplete="off" />
+            </label>
+          </div>
+          <div class="buttons">
+            <button id="fob-calculate" class="primary">Hitung</button>
+            <button id="fob-reset">Reset</button>
+          </div>
+          <div id="fob-error" class="error" role="alert" hidden></div>
+          <div class="buttons result-actions" id="fob-copy-wrap" hidden>
+            <button id="fob-copy" type="button" class="copy-button">Copy Hasil</button>
+          </div>
+          <dl class="fob-result" id="fob-result" hidden>
+            <div>
+              <dt>HPP After Disc (Rp)</dt>
+              <dd id="fob-out-after-disc"></dd>
+            </div>
+            <div>
+              <dt>DPP (Rp)</dt>
+              <dd id="fob-out-dpp"></dd>
+            </div>
+            <div>
+              <dt>Total (Rp)</dt>
+              <dd id="fob-out-total"></dd>
+            </div>
+            <div>
+              <dt>PPN (Rp)</dt>
+              <dd id="fob-out-ppn"></dd>
+            </div>
+            <div>
+              <dt>HPP + Aks (Rp)</dt>
+              <dd id="fob-out-plus-aks"></dd>
+            </div>
+          </dl>
+          </div>
+        </section>
+        <section id="activity-log-panel" class="panel">
+          <h1 class="panel-head" id="panel-head-activityLog" data-panel="activityLog" role="button" tabindex="0" aria-expanded="true" aria-controls="panel-body-activityLog">
+            Log Aktivitas
+            <span class="chev" aria-hidden="true"></span>
+          </h1>
+          <div class="panel-body" id="panel-body-activityLog">
+          <div class="activity-file-bar">
+            <span id="activity-file-status">File log: belum dipilih</span>
+            <button id="activity-pick-file" type="button">Pilih File Log</button>
+          </div>
+          <div id="activity-pending-warning" class="activity-warning" role="alert" hidden></div>
+          <div class="activity-telegram">
+            <h2>Pengaturan Telegram</h2>
+            <div class="activity-value-pair">
+              <label class="field"><span>Bot Token</span><input id="telegram-bot-token" type="password" autocomplete="off" /></label>
+              <label class="field"><span>Chat ID</span><input id="telegram-chat-id" type="text" autocomplete="off" /></label>
+            </div>
+            <div class="buttons">
+              <button id="telegram-save" type="button">Simpan Pengaturan</button>
+              <label class="panel-toggle"><span>Kirim otomatis ke Telegram</span><input id="telegram-auto-send" type="checkbox" /></label>
+            </div>
+            <div id="telegram-settings-message" class="error" role="alert" hidden></div>
+            <div id="telegram-pending-warning" class="activity-warning" role="alert" hidden></div>
+          </div>
+          <div class="activity-form-grid">
+            <label class="field"><span>Kode Artikel</span><input id="activity-kode" type="text" autocomplete="off" /></label>
+            <fieldset class="activity-actions"><legend>Jenis Aksi</legend>
+              <label><input type="checkbox" name="activity-action" value="Create PLU" /> Create PLU</label>
+              <label><input type="checkbox" name="activity-action" value="Rubah HPP" /> Rubah HPP</label>
+              <label><input type="checkbox" name="activity-action" value="Rubah HJ" /> Rubah HJ</label>
+              <label><input id="activity-action-sp" type="checkbox" name="activity-action" value="Buat SP" /> Buat SP</label>
+            </fieldset>
+            <label id="activity-sub-wrap" class="field" hidden><span>Sub Aksi SP</span><select id="activity-sub"><option value="">Pilih sub aksi</option><option>SP Keseluruhan</option><option>SP (per LOT)</option><option>SP (per Part)</option></select></label>
+            <div id="activity-value-fields" class="activity-value-fields">
+              <div id="activity-hpp-fields" class="activity-value-pair" hidden><label class="field"><span>HPP Lama</span><input id="activity-hpp-old" type="text" autocomplete="off" /></label><label class="field"><span>HPP Baru</span><input id="activity-hpp-new" type="text" autocomplete="off" /></label></div>
+              <div id="activity-hj-fields" class="activity-value-pair" hidden><label class="field"><span>HJ Lama</span><input id="activity-hj-old" type="text" autocomplete="off" /></label><label class="field"><span>HJ Baru</span><input id="activity-hj-new" type="text" autocomplete="off" /></label></div>
+              <div id="activity-generic-fields" class="activity-value-pair"><label class="field"><span>Nilai Lama</span><input id="activity-old" type="text" autocomplete="off" /></label><label class="field"><span>Nilai Baru</span><input id="activity-new" type="text" autocomplete="off" /></label></div>
+            </div>
+            <label class="field activity-note"><span>Catatan</span><textarea id="activity-note" rows="2"></textarea></label>
+          </div>
+          <div class="buttons">
+            <button id="activity-add" class="primary" type="button">Tambah Log</button>
+            <button id="activity-reset" type="button">Reset</button>
+          </div>
+          <div id="activity-error" class="error" role="alert" hidden></div>
+          <label class="activity-filter field"><span>Filter Kode Artikel</span><input id="activity-filter" type="text" placeholder="Ketik kode artikel..." autocomplete="off" /></label>
+          <div class="activity-table-wrap">
+            <table class="activity-table"><thead><tr><th>Salin Teks</th><th>Waktu</th><th>Kode Artikel</th><th>Aksi</th><th>Perubahan Nilai</th><th>Catatan</th></tr></thead><tbody id="activity-history"></tbody></table>
+          </div>
+          <div class="activity-pagination" id="activity-pagination" hidden>
+            <button id="activity-page-first" type="button" class="page-button" aria-label="Halaman pertama">&#171;</button>
+            <button id="activity-page-prev" type="button" class="page-button" aria-label="Halaman sebelumnya">&#8249;</button>
+            <span id="activity-page-info" class="page-info"></span>
+            <button id="activity-page-next" type="button" class="page-button" aria-label="Halaman berikutnya">&#8250;</button>
+            <button id="activity-page-last" type="button" class="page-button" aria-label="Halaman terakhir">&#187;</button>
+          </div>
+          <p id="activity-empty" class="activity-empty">Belum ada log aktivitas.</p>
+          </div>
+        </section>
+        <div id="empty-state" class="empty-state" hidden>
+          <p>Tidak ada panel aktif. Aktifkan salah satu di atas.</p>
+        </div>
+      </div>
+    </main>
+    <script src="lib/fraction.js"></script>
+    <script src="lib/format.js"></script>
+    <script src="lib/calc.js"></script>
+    <script src="lib/validate.js"></script>
+    <script src="lib/store.js"></script>
+    <script src="lib/logic-log.js"></script>
+    <script src="lib/log-store.js"></script>
+    <script src="lib/log-file.js"></script>
+    <script src="lib/telegram-client.js"></script>
+    <script src="popup.js"></script>
+  </body>
+</html>

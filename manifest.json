@@ -1,0 +1,12 @@
+{
+  "manifest_version": 3,
+  "name": "PLU Qty per Size Calculator",
+  "version": "1.0.0",
+  "description": "Distributes a total quantity across sizes and colors (PLU creation) and computes the selling price (HJ) from an RMB cost - a local, offline port of the original desktop calculator. Remembers your inputs between sessions.",
+  "action": {
+    "default_title": "PLU Qty per Size Calculator",
+    "default_popup": "popup.html"
+  },
+  "permissions": ["storage"],
+  "host_permissions": ["https://api.telegram.org/*"]
+}

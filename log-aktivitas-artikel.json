@@ -1,0 +1,232 @@
+[
+  {
+    "id": "2026-10-06T02:06:03.491Z-x8pyew0d",
+    "timestampIso": "2026-10-06T02:06:03.491Z",
+    "kodeArtikel": "LIN000897M",
+    "jenisAksi": [
+      "Create PLU"
+    ],
+    "subAksi": null,
+    "catatan": "",
+    "nilaiPerubahan": {
+      "hpp": null,
+      "hj": null,
+      "umum": {
+        "lama": "",
+        "baru": ""
+      }
+    }
+  },
+  {
+    "id": "2026-10-05T10:39:51.570Z-wc20nlus",
+    "timestampIso": "2026-10-05T10:39:51.570Z",
+    "kodeArtikel": "LIN000285W",
+    "jenisAksi": [
+      "Rubah HPP",
+      "Rubah HJ"
+    ],
+    "subAksi": null,
+    "catatan": "",
+    "nilaiPerubahan": {
+      "hpp": {
+        "lama": "110.500",
+        "baru": "95.000"
+      },
+      "hj": {
+        "lama": "325.000",
+        "baru": "275.000"
+      },
+      "umum": null
+    }
+  },
+  {
+    "id": "2026-10-05T07:08:24.848Z-iu9junbv",
+    "timestampIso": "2026-10-05T07:08:24.848Z",
+    "kodeArtikel": "LIN002104C",
+    "jenisAksi": [
+      "Create PLU"
+    ],
+    "subAksi": null,
+    "catatan": "",
+    "nilaiPerubahan": {
+      "hpp": null,
+      "hj": null,
+      "umum": {
+        "lama": "",
+        "baru": ""
+      }
+    }
+  },
+  {
+    "id": "2026-10-05T07:05:38.575Z-1helny0v",
+    "timestampIso": "2026-10-05T07:05:38.575Z",
+    "kodeArtikel": "LIN002104C",
+    "jenisAksi": [
+      "Create PLU"
+    ],
+    "subAksi": null,
+    "catatan": "",
+    "nilaiPerubahan": {
+      "hpp": null,
+      "hj": null,
+      "umum": {
+        "lama": "",
+        "baru": ""
+      }
+    }
+  },
+  {
+    "id": "2026-10-05T07:00:11.100Z-01dv4iwr",
+    "timestampIso": "2026-10-05T07:00:11.100Z",
+    "kodeArtikel": "LIN002105C",
+    "jenisAksi": [
+      "Create PLU"
+    ],
+    "subAksi": null,
+    "catatan": "",
+    "nilaiPerubahan": {
+      "hpp": null,
+      "hj": null,
+      "umum": {
+        "lama": "",
+        "baru": ""
+      }
+    }
+  },
+  {
+    "id": "2026-10-05T06:56:26.091Z-90frb48j",
+    "timestampIso": "2026-10-05T06:56:26.091Z",
+    "kodeArtikel": "LIN002106C",
+    "jenisAksi": [
+      "Create PLU"
+    ],
+    "subAksi": null,
+    "catatan": "",
+    "nilaiPerubahan": {
+      "hpp": null,
+      "hj": null,
+      "umum": {
+        "lama": "",
+        "baru": ""
+      }
+    }
+  },
+  {
+    "id": "2026-10-05T06:55:22.115Z-33zvruee",
+    "timestampIso": "2026-10-05T06:55:22.115Z",
+    "kodeArtikel": "LIN000930Q",
+    "jenisAksi": [
+      "Create PLU"
+    ],
+    "subAksi": null,
+    "catatan": "",
+    "nilaiPerubahan": {
+      "hpp": null,
+      "hj": null,
+      "umum": {
+        "lama": "",
+        "baru": ""
+      }
+    }
+  },
+  {
+    "id": "2026-10-05T06:18:34.674Z-5gpwd6qs",
+    "timestampIso": "2026-10-05T06:18:34.674Z",
+    "kodeArtikel": "LIN000267W",
+    "jenisAksi": [
+      "Rubah HPP"
+    ],
+    "subAksi": null,
+    "catatan": "",
+    "nilaiPerubahan": {
+      "hpp": {
+        "lama": "41.500",
+        "baru": "40.000"
+      },
+      "hj": null,
+      "umum": null
+    }
+  },
+  {
+    "id": "2026-10-05T04:31:14.170Z-zq1fwmf7",
+    "timestampIso": "2026-10-05T04:31:14.170Z",
+    "kodeArtikel": "I31000430M",
+    "jenisAksi": [
+      "Rubah HPP",
+      "Rubah HJ",
+      "Buat SP"
+    ],
+    "subAksi": "SP Keseluruhan",
+    "catatan": "",
+    "nilaiPerubahan": {
+      "hpp": {
+        "lama": "151.800,00",
+        "baru": "184.470,00"
+      },
+      "hj": {
+        "lama": "445.000,00",
+        "baru": "595.000,00"
+      },
+      "umum": null
+    }
+  },
+  {
+    "id": "2026-10-05T04:22:18.746Z-11hq04s4",
+    "timestampIso": "2026-10-05T04:22:18.746Z",
+    "kodeArtikel": "I31000437M",
+    "jenisAksi": [
+      "Rubah HPP",
+      "Rubah HJ",
+      "Buat SP"
+    ],
+    "subAksi": "SP Keseluruhan",
+    "catatan": "",
+    "nilaiPerubahan": {
+      "hpp": {
+        "lama": "105.800,00",
+        "baru": "128.570,00"
+      },
+      "hj": {
+        "lama": "325.000,00",
+        "baru": "445.000,00"
+      },
+      "umum": null
+    }
+  },
+  {
+    "id": "2026-10-05T04:08:13.320Z-v1580o3b",
+    "timestampIso": "2026-10-05T04:08:13.320Z",
+    "kodeArtikel": "I31000466M",
+    "jenisAksi": [
+      "Create PLU"
+    ],
+    "subAksi": null,
+    "catatan": "PLU",
+    "nilaiPerubahan": {
+      "hpp": null,
+      "hj": null,
+      "umum": {
+        "lama": "146.340,00",
+        "baru": "425.000,00"
+      }
+    }
+  },
+  {
+    "id": "2026-10-05T03:55:33.012Z-fburynm8",
+    "timestampIso": "2026-10-05T03:55:33.012Z",
+    "kodeArtikel": "I31000519C",
+    "jenisAksi": [
+      "Create PLU"
+    ],
+    "subAksi": null,
+    "catatan": "CREATE PLU",
+    "nilaiPerubahan": {
+      "hpp": null,
+      "hj": null,
+      "umum": {
+        "lama": "",
+        "baru": ""
+      }
+    }
+  }
+]

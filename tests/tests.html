@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>PLU Calculator — Tests</title>
+<style>
+  :root { color-scheme: light dark; }
+  body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; font-size: 14px; margin: 16px; }
+  h1 { font-size: 18px; }
+  .summary { font-size: 15px; margin: 8px 0 16px; }
+  table { border-collapse: collapse; width: 100%; }
+  th, td { border: 1px solid #999; padding: 4px 8px; text-align: left; vertical-align: top; }
+  th { background: #eee; }
+  td.expect { white-space: pre; font-family: ui-monospace, Consolas, monospace; }
+  tr.fail td { background: #fdd; }
+  .fail { color: #a00; font-weight: 700; }
+  .pass { color: #080; font-weight: 700; }
+  button { font: inherit; padding: 6px 14px; }
+</style>
+</head>
+<body>
+<h1>PLU Calculator — Test Results</h1>
+<p class="summary" id="summary">running…</p>
+<p><button id="rerun">Re-run tests</button></p>
+<table id="results" style="display:none">
+  <thead><tr><th>#</th><th>Test</th><th>Expected</th><th>Actual</th><th>Status</th></tr></thead>
+  <tbody></tbody>
+</table>
+
+<script src="lib/fraction.js"></script>
+<script src="lib/format.js"></script>
+<script src="lib/calc.js"></script>
+<script src="lib/validate.js"></script>
+<script src="lib/logic-log.js"></script>
+<script src="tests/tests.js"></script>
+<script>
+document.getElementById('rerun').addEventListener('click', function () {
+  runAllTests(document.getElementById('results').querySelector('tbody'),
+              document.getElementById('summary'));
+});
+// Run once on load: the test file defines runAllTests.
+runAllTests(document.getElementById('results').querySelector('tbody'),
+            document.getElementById('summary'));
+</script>
+</body>
+</html>
